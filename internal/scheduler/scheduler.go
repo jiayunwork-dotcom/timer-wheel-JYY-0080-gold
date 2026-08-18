@@ -241,5 +241,8 @@ func (s *Scheduler) signalWake() {
 // tick advances the underlying wheel to now and fires due tasks. It is a no-op
 // once the scheduler is shut down.
 func (s *Scheduler) tick(now time.Time) {
+	if s.isShutdown() {
+		return
+	}
 	s.wheel.Advance(now)
 }

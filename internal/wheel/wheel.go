@@ -273,7 +273,7 @@ func (w *Wheel) advanceClock(now time.Time) {
 	steps := now.Sub(w.currentTime) / w.tick
 	w.currentTime = w.currentTime.Add(steps * w.tick)
 	if w.overflow != nil {
-		w.overflow.advanceClock(now)
+		w.overflow.advanceClock(w.currentTime)
 	}
 }
 
@@ -282,11 +282,12 @@ func (w *Wheel) advanceClock(now time.Time) {
 // advanced clock) or back into a lower/higher bucket, cascading them toward
 // their firing instant.
 func (w *Wheel) flush(now time.Time) {
-	for i := range w.buckets {
-		b := w.buckets[i]
-		if b.expiration.IsZero() || b.expiration.After(now) {
-			continue
+	for {
+		b := w.ready.peek()
+		if b == nil || b.expiration.After(now) {
+			break
 		}
+		heapPop(w.ready)
 		entries := b.entries
 		b.entries = nil
 		b.expiration = time.Time{}
